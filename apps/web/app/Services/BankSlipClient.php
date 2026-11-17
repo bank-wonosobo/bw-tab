@@ -50,6 +50,14 @@ class BankSlipClient
         }
         $body = $response->json();
         if (! is_array($body) || ! array_is_list($body) || count($body) !== 1 || ! is_array($body[0])) {
+            Log::warning('Format respons bank slip tidak sesuai.', [
+                'url' => $config['url'],
+                'status' => $response->status(),
+                'body_type' => get_debug_type($body),
+                'body_is_list' => is_array($body) ? array_is_list($body) : null,
+                'body_count' => is_array($body) ? count($body) : null,
+                'body_keys' => is_array($body) ? array_keys($body) : null,
+            ]);
             throw ValidationException::withMessages(['account_number' => 'Rekening tidak ditemukan atau respons API tidak valid.']);
         }
         $record = $body[0];
@@ -58,6 +66,14 @@ class BankSlipClient
             'Nama' => ['required', 'string', 'max:150'], 'Alamat' => ['nullable', 'string', 'max:2000'], 'NasabahID' => ['nullable', 'string', 'max:100'],
         ]);
         if ($validator->fails() || $record['KodeCabang'] !== $bankCode) {
+            Log::warning('Field respons bank slip tidak sesuai.', [
+                'url' => $config['url'],
+                'status' => $response->status(),
+                'response_keys' => array_keys($record),
+                'expected_account_field' => $config['response_field'],
+                'branch_matches' => ($record['KodeCabang'] ?? null) === $bankCode,
+                'validation_errors' => $validator->errors()->keys(),
+            ]);
             throw ValidationException::withMessages(['account_number' => 'Data rekening API tidak sesuai dengan cabang yang dipilih atau format respons tidak valid.']);
         }
 

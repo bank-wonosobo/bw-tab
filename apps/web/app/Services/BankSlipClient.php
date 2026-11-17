@@ -24,7 +24,7 @@ class BankSlipClient
         }
         try {
             $response = $client->post($config['url'], [
-                'kodeCabang' => $bankCode,
+                'kodeCabang' => "01",
                 $config['request_field'] => $accountNumber,
                 ...($apiProduct === 'pinjaman' ? ['nominal' => '0'] : ['setor' => '0', 'tarik' => '0']),
                 'namaTrans' => '',

@@ -1,0 +1,36 @@
+services:
+    bw-tab-app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: production
+        image: laravel-inertia-clients:latest
+        restart: unless-stopped
+        env_file:
+            - .env.docker
+        volumes:
+            - laravel-storage:/var/www/html/storage
+            - laravel-public:/var/www/html/public
+        networks:
+            - bw-tab-app-network
+
+    nginx:
+        image: nginx:1.27-alpine
+        restart: unless-stopped
+        ports:
+            - "7000:80"
+        volumes:
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+            - laravel-public:/var/www/html/public:ro
+        depends_on:
+            - bw-tab-app
+        networks:
+            - bw-tab-app-network
+
+volumes:
+    laravel-storage:
+    laravel-public:
+
+networks:
+    bw-tab-app-network:
+        driver: bridge

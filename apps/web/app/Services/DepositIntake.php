@@ -31,12 +31,13 @@ class DepositIntake
         } catch (DecryptException) {
             $lookup = null;
         }
-        if (! is_array($lookup) || $lookup['expires_at'] < now()->timestamp || $lookup['branch_id'] !== $branch->id || $lookup['service_id'] !== $service->id || $lookup['bank_code'] !== $branch->bank_code || $lookup['account_number'] !== $data['account_number'] || $lookup['transaction_type'] !== $service->transaction_type) {
+        $bankCode = (string) config('services.bank_slip.branch_code');
+        if (! is_array($lookup) || $lookup['expires_at'] < now()->timestamp || $lookup['branch_id'] !== $branch->id || $lookup['service_id'] !== $service->id || $lookup['bank_code'] !== $bankCode || $lookup['account_number'] !== $data['account_number'] || $lookup['transaction_type'] !== $service->transaction_type) {
             throw ValidationException::withMessages(['account_number' => 'Silakan cek ulang rekening sebelum mengambil nomor antrean. Hasil pengecekan berlaku 10 menit.']);
         }
 
         return [
-            'transaction_type' => $service->transaction_type, 'bank_branch_code' => $branch->bank_code,
+            'transaction_type' => $service->transaction_type, 'bank_branch_code' => $bankCode,
             'account_number' => $data['account_number'], 'account_reference' => $lookup['account']['account_reference'],
             'customer_name' => $lookup['account']['customer_name'], 'customer_address' => $lookup['account']['customer_address'],
             'customer_id' => $lookup['account']['customer_id'],

@@ -71,6 +71,8 @@ class BankSlipClient
                 'status' => $response->status(),
                 'response_keys' => array_keys($record),
                 'expected_account_field' => $config['response_field'],
+                'api_branch_code' => $record['KodeCabang'] ?? null,
+                'configured_branch_code' => $bankCode,
                 'branch_matches' => ($record['KodeCabang'] ?? null) === $bankCode,
                 'validation_errors' => $validator->errors()->keys(),
             ]);

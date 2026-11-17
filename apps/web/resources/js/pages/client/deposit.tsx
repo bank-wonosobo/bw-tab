@@ -15,7 +15,12 @@ type Account = {
     account_reference: string;
 };
 type Field = 'account_number' | 'amount';
-type Props = { branch: Branch; service: Service; isOpen: boolean };
+type Props = {
+    branch: Branch;
+    service: Service;
+    bankCode: string;
+    isOpen: boolean;
+};
 const presets = [
     { value: 10000, label: 'Rp10 rb' },
     { value: 50000, label: 'Rp50 rb' },
@@ -31,7 +36,7 @@ const rupiah = (amount: string) =>
         maximumFractionDigits: 0,
     }).format(Number(amount || 0));
 
-export default function Deposit({ branch, service, isOpen }: Props) {
+export default function Deposit({ branch, service, bankCode, isOpen }: Props) {
     usePoll(5000, { only: ['isOpen'] });
     const accountRef = useRef<HTMLInputElement>(null);
     const amountRef = useRef<HTMLInputElement>(null);
@@ -64,7 +69,7 @@ export default function Deposit({ branch, service, isOpen }: Props) {
     const canCheck =
         !locked &&
         isOpen &&
-        Boolean(branch.bank_code) &&
+        Boolean(bankCode) &&
         form.data.account_number.length >= 5;
     const canSubmit =
         !locked &&
@@ -153,7 +158,7 @@ export default function Deposit({ branch, service, isOpen }: Props) {
                         Sesi antrean belum dibuka. Silakan hubungi petugas.
                     </p>
                 )}
-                {!branch.bank_code && (
+                {!bankCode && (
                     <p
                         role="alert"
                         className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"

@@ -5,6 +5,7 @@ $bankSlipBaseUrl = rtrim((string) env('BANK_SLIP_BASE_URL', 'https://api.bw.com:
 return [
     'bank_slip' => [
         'base_url' => $bankSlipBaseUrl,
+        'branch_code' => env('BANK_SLIP_BRANCH_CODE', '01'),
         'token' => env('BANK_SLIP_TOKEN'),
         'products' => [
             'tabungan' => ['url' => env('BANK_SLIP_TABUNGAN_URL', $bankSlipBaseUrl.'/slip/tabungan'), 'request_field' => 'noTab', 'response_field' => 'NoTab'],

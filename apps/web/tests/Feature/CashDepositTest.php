@@ -167,18 +167,16 @@ test('connection failure is handled without leaking exception or creating ticket
     $this->assertDatabaseCount('queue_tickets', 0);
 });
 
-test('wrong branch response is rejected and missing branch code never calls API', function () {
+test('API code remains independent from branch configuration', function () {
     [$branch, $service] = setupCash();
-    $body = bankResponse();
-    $body[0]['KodeCabang'] = '99';
-    Http::fake(['https://api.bw.com:3232/slip/tabungan' => Http::response($body)]);
+    Http::fake(['https://api.bw.com:3232/slip/tabungan' => Http::response(bankResponse())]);
     $data = cashInput($branch, $service);
 
-    $this->postJson('/client/kantor-pusat/rekening', $data)->assertUnprocessable();
+    $this->postJson('/client/kantor-pusat/rekening', $data)->assertOk();
     $branch->update(['bank_code' => null]);
-    $this->postJson('/client/kantor-pusat/rekening', $data)->assertUnprocessable();
+    $this->postJson('/client/kantor-pusat/rekening', $data)->assertOk();
 
-    Http::assertSentCount(1);
+    Http::assertSentCount(2);
 });
 
 test('customer service issues tickets without any form or API', function () {

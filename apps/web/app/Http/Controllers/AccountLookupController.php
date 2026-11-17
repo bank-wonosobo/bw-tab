@@ -20,7 +20,8 @@ class AccountLookupController extends Controller
         ], ['account_number.regex' => 'Nomor rekening harus terdiri dari 5–30 angka.']);
         abort_unless($branch->is_active, 404);
         $service = QueueService::whereKey($data['service_id'])->where('is_active', true)->firstOrFail();
-        if (! $branch->bank_code || ! $service->transaction_type) {
+        $bankCode = (string) config('services.bank_slip.branch_code');
+        if (! $bankCode || ! $service->transaction_type) {
             throw ValidationException::withMessages(['account_number' => 'Kode cabang API atau jenis setoran belum dikonfigurasi. Hubungi petugas.']);
         }
         if (! $branch->sessions()->whereDate('business_date', today())->where('status', 'OPEN')->exists()
@@ -28,11 +29,11 @@ class AccountLookupController extends Controller
             throw ValidationException::withMessages(['account_number' => 'Layanan atau sesi antrean cabang belum tersedia.']);
         }
         $request->session()->forget('bank_lookups.'.$data['request_id']);
-        $account = $client->lookup($service->transaction_type, $branch->bank_code, $data['account_number']);
+        $account = $client->lookup($service->transaction_type, $bankCode, $data['account_number']);
         $lookups = $request->session()->get('bank_lookups', []);
         $lookups = array_filter($lookups, fn ($item) => $item['expires_at'] >= now()->timestamp);
         $snapshot = [
-            'branch_id' => $branch->id, 'service_id' => $service->id, 'bank_code' => $branch->bank_code, 'account_number' => $data['account_number'], 'transaction_type' => $service->transaction_type,
+            'branch_id' => $branch->id, 'service_id' => $service->id, 'bank_code' => $bankCode, 'account_number' => $data['account_number'], 'transaction_type' => $service->transaction_type,
             'account' => $account, 'expires_at' => now()->addMinutes(10)->timestamp, 'verified_at' => now()->toIso8601String(),
         ];
         $lookups[$data['request_id']] = ['expires_at' => $snapshot['expires_at'], 'data' => Crypt::encrypt($snapshot)];

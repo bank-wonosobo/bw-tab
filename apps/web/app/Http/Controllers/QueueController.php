@@ -46,6 +46,7 @@ class QueueController extends Controller
         return Inertia::render('client/deposit', [
             'branch' => $branch,
             'service' => $service,
+            'bankCode' => config('services.bank_slip.branch_code'),
             'isOpen' => $branch->sessions()->whereDate('business_date', today())->where('status', 'OPEN')->exists(),
         ]);
     }

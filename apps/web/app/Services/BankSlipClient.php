@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -32,10 +33,20 @@ class BankSlipClient
                 ...($apiProduct === 'pinjaman' ? [] : ['sumberDana' => '', 'tujuanTransaksi' => '']),
             ]);
         } catch (ConnectionException) {
+            Log::warning('Bank slip API tidak dapat dihubungi.', [
+                'url' => $config['url'],
+                'product' => $apiProduct,
+            ]);
             throw ValidationException::withMessages(['account_number' => 'API rekening tidak dapat dihubungi. Silakan coba kembali.']);
         }
         if (! $response->successful()) {
-            throw ValidationException::withMessages(['account_number' => 'Pengecekan rekening gagal. Silakan periksa nomor rekening atau hubungi petugas.']);
+            Log::warning('Bank slip API menolak pengecekan rekening.', [
+                'url' => $config['url'],
+                'product' => $apiProduct,
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 1000),
+            ]);
+            throw ValidationException::withMessages(['account_number' => 'Pengecekan rekening gagal (HTTP '.$response->status().'). Silakan periksa nomor rekening atau hubungi petugas.']);
         }
         $body = $response->json();
         if (! is_array($body) || ! array_is_list($body) || count($body) !== 1 || ! is_array($body[0])) {

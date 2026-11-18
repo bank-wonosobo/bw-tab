@@ -1,21 +1,21 @@
-import { time, type CashDeposit } from '@/types/queue';
-import { printCashLoanSlip } from '@/components/cash-loan-slip';
-import { Fragment } from 'react';
-import { createRoot } from 'react-dom/client';
+import { printCashLoanSlip } from "@/components/cash-loan-slip";
+import { time, type CashDeposit } from "@/types/queue";
+import { Fragment } from "react";
+import { createRoot } from "react-dom/client";
 
 const numberWords = [
-    'nol',
-    'satu',
-    'dua',
-    'tiga',
-    'empat',
-    'lima',
-    'enam',
-    'tujuh',
-    'delapan',
-    'sembilan',
-    'sepuluh',
-    'sebelas',
+    "nol",
+    "satu",
+    "dua",
+    "tiga",
+    "empat",
+    "lima",
+    "enam",
+    "tujuh",
+    "delapan",
+    "sembilan",
+    "sepuluh",
+    "sebelas",
 ];
 
 function terbilang(value: number): string {
@@ -23,31 +23,31 @@ function terbilang(value: number): string {
     if (number < 12) return numberWords[number];
     if (number < 20) return `${terbilang(number - 10)} belas`;
     if (number < 100) {
-        return `${terbilang(Math.floor(number / 10))} puluh${number % 10 ? ` ${terbilang(number % 10)}` : ''}`;
+        return `${terbilang(Math.floor(number / 10))} puluh${number % 10 ? ` ${terbilang(number % 10)}` : ""}`;
     }
     if (number < 200)
-        return `seratus${number % 100 ? ` ${terbilang(number % 100)}` : ''}`;
+        return `seratus${number % 100 ? ` ${terbilang(number % 100)}` : ""}`;
     if (number < 1000) {
-        return `${terbilang(Math.floor(number / 100))} ratus${number % 100 ? ` ${terbilang(number % 100)}` : ''}`;
+        return `${terbilang(Math.floor(number / 100))} ratus${number % 100 ? ` ${terbilang(number % 100)}` : ""}`;
     }
     if (number < 2000)
-        return `seribu${number % 1000 ? ` ${terbilang(number % 1000)}` : ''}`;
+        return `seribu${number % 1000 ? ` ${terbilang(number % 1000)}` : ""}`;
     if (number < 1_000_000) {
-        return `${terbilang(Math.floor(number / 1000))} ribu${number % 1000 ? ` ${terbilang(number % 1000)}` : ''}`;
+        return `${terbilang(Math.floor(number / 1000))} ribu${number % 1000 ? ` ${terbilang(number % 1000)}` : ""}`;
     }
     if (number < 1_000_000_000) {
-        return `${terbilang(Math.floor(number / 1_000_000))} juta${number % 1_000_000 ? ` ${terbilang(number % 1_000_000)}` : ''}`;
+        return `${terbilang(Math.floor(number / 1_000_000))} juta${number % 1_000_000 ? ` ${terbilang(number % 1_000_000)}` : ""}`;
     }
     if (number < 1_000_000_000_000) {
-        return `${terbilang(Math.floor(number / 1_000_000_000))} miliar${number % 1_000_000_000 ? ` ${terbilang(number % 1_000_000_000)}` : ''}`;
+        return `${terbilang(Math.floor(number / 1_000_000_000))} miliar${number % 1_000_000_000 ? ` ${terbilang(number % 1_000_000_000)}` : ""}`;
     }
-    return `${terbilang(Math.floor(number / 1_000_000_000_000))} triliun${number % 1_000_000_000_000 ? ` ${terbilang(number % 1_000_000_000_000)}` : ''}`;
+    return `${terbilang(Math.floor(number / 1_000_000_000_000))} triliun${number % 1_000_000_000_000 ? ` ${terbilang(number % 1_000_000_000_000)}` : ""}`;
 }
 
 const currency = (value: string) =>
-    new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
+    new Intl.NumberFormat("id-ID", {
+        // style: 'currency',
+        // currency: 'IDR',
         maximumFractionDigits: 0,
     }).format(Number(value));
 
@@ -56,10 +56,10 @@ export function CashDepositSlip({ deposit }: { deposit: CashDeposit }) {
     const slipCreatedAt = time(new Date().toISOString());
     const rows = [
         // ["Jenis transaksi", isWithdrawal ? "Penarikan tunai" : "Setoran"],
-        ['Nomor rekening', deposit.account_reference],
+        ["Nomor rekening", deposit.account_reference],
         // ["Nomor yang diinput", deposit.account_number],
-        ['Pemilik rekening', deposit.customer_name],
-        ['Alamat penyetor', deposit.customer_address],
+        ["Pemilik rekening", deposit.customer_name],
+        ["Alamat penyetor", deposit.customer_address],
 
         // [isWithdrawal ? "Nama penarik" : "Nama penyetor", deposit.sender_name],
         // ["Tanggal", time(deposit.verified_at)],
@@ -106,14 +106,20 @@ export function CashDepositSlip({ deposit }: { deposit: CashDeposit }) {
                         {rows.map(([label, value]) => (
                             <Fragment key={label}>
                                 <div className="slip-label"></div>
-                                <div className="slip-value">{value || '—'}</div>
+                                <div className="slip-value">{value || "—"}</div>
                             </Fragment>
                         ))}
                     </div>
                     <section className="slip-details-kanan">
                         <Fragment>
                             <div className="slip-label"></div>
-                            <div className="slip-value">
+                            <div
+                                className="slip-value"
+                                style={{
+                                    paddingLeft: "0.5cm",
+                                    marginTop: "0.1",
+                                }}
+                            >
                                 {currency(deposit.amount)}
                             </div>
                         </Fragment>
@@ -134,18 +140,18 @@ export function CashDepositSlip({ deposit }: { deposit: CashDeposit }) {
 }
 
 export function printCashDepositSlip(deposit: CashDeposit): void {
-    if (deposit.transaction_type === 'pinjaman') {
+    if (deposit.transaction_type === "pinjaman") {
         printCashLoanSlip(deposit);
         return;
     }
-    const printWindow = window.open('', '_blank', 'width=850,height=450');
+    const printWindow = window.open("", "_blank", "width=850,height=450");
     if (!printWindow) return;
     printWindow.document.write(
         '<!doctype html><html><head><title>Slip transaksi</title></head><body><div id="cash-deposit-slip-root"></div></body></html>',
     );
     printWindow.document.close();
     const root = createRoot(
-        printWindow.document.getElementById('cash-deposit-slip-root')!,
+        printWindow.document.getElementById("cash-deposit-slip-root")!,
     );
     root.render(<CashDepositSlip deposit={deposit} />);
     printWindow.onafterprint = () => {

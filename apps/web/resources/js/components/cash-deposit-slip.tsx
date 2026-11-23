@@ -2,6 +2,7 @@ import { printCashLoanSlip } from "@/components/cash-loan-slip";
 import { time, type CashDeposit } from "@/types/queue";
 import { Fragment } from "react";
 import { createRoot } from "react-dom/client";
+import { printCashWidrawSlip } from "./cash-widraw-slip";
 
 const numberWords = [
     "nol",
@@ -142,6 +143,10 @@ export function CashDepositSlip({ deposit }: { deposit: CashDeposit }) {
 export function printCashDepositSlip(deposit: CashDeposit): void {
     if (deposit.transaction_type === "pinjaman") {
         printCashLoanSlip(deposit);
+        return;
+    }
+    if (deposit.transaction_type === "tarik_tunai") {
+        printCashWidrawSlip(deposit);
         return;
     }
     const printWindow = window.open("", "_blank", "width=850,height=450");

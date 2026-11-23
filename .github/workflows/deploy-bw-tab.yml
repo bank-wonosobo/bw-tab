@@ -45,7 +45,6 @@ jobs:
           -f Dockerfile \
           -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} \
           -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-              .
 
       - name: Push Docker Image
         run: |

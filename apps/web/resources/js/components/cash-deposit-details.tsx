@@ -23,9 +23,46 @@ export function CashDepositDetails({
         maximumFractionDigits: 0,
     }).format(Number(deposit.amount));
     const copyValue = async (key: string, value: string) => {
-        await navigator.clipboard.writeText(value);
-        setCopied(key);
-        window.setTimeout(() => setCopied(null), 1500);
+        try {
+            let copiedWithClipboardApi = false;
+
+            // The async Clipboard API is only available in secure contexts.
+            // Docker deployments are often accessed over plain HTTP, so keep
+            // a DOM fallback for browsers that do not expose it or reject it.
+            if (
+                window.isSecureContext &&
+                typeof navigator.clipboard?.writeText === 'function'
+            ) {
+                try {
+                    await navigator.clipboard.writeText(value);
+                    copiedWithClipboardApi = true;
+                } catch {
+                    // Fall through to the DOM fallback below.
+                }
+            }
+
+            if (!copiedWithClipboardApi) {
+                const textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                const copied = document.execCommand('copy');
+                textarea.remove();
+
+                if (!copied) {
+                    throw new Error('Browser tidak mengizinkan penyalinan.');
+                }
+            }
+
+            setCopied(key);
+            window.setTimeout(() => setCopied(null), 1500);
+        } catch (error) {
+            console.error('Gagal menyalin nilai ke clipboard.', error);
+        }
     };
     const printSlip = () => printCashDepositSlip(deposit);
     const saveAmount = () => {

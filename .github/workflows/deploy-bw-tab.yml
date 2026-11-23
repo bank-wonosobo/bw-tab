@@ -38,14 +38,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        working-directory: apps/web
+      - name: Build Docker Image
+        working-directory: apps/api
         run: |
           docker build \
-              --target production \
-              -f Dockerfile \
-              -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
+          -f Dockerfile.admin \
+          -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} \
+          -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
               .
 
-      - name: Push Docker image
-        run: docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}

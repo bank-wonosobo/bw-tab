@@ -1,46 +1,47 @@
-
 # syntax=docker/dockerfile:1.7
 
 # ==========================================
-# STAGE 1: PHP + Composer + Wayfinder
+# STAGE 1: FrankenPHP Base
 # ==========================================
-FROM php:8.4-cli-bookworm AS php-build
+FROM dunglas/frankenphp:1-php8.4-bookworm AS base
+
+WORKDIR /app
+
+RUN install-php-extensions \
+    pdo_pgsql \
+    zip \
+    intl \
+    mbstring \
+    bcmath \
+    opcache \
+    pcntl
+
+# ==========================================
+# STAGE 2: Composer + Wayfinder
+# ==========================================
+FROM base AS php-build
 
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    libpq-dev \
-    libzip-dev \
-    libicu-dev \
-    libonig-dev \
-    && docker-php-ext-install \
-        pdo_pgsql \
-        zip \
-        intl \
-        mbstring \
-        bcmath \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
-
-# Copy source code
 COPY . .
 
 # Remove cached Laravel manifests
-RUN rm -f \
-    bootstrap/cache/packages.php \
-    bootstrap/cache/services.php \
-    bootstrap/cache/config.php
+RUN rm -f bootstrap/cache/*.php
 
 # Install production dependencies
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-scripts
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache \
+    composer install \
+        --no-dev \
+        --no-interaction \
+        --prefer-dist \
+        --optimize-autoloader \
+        --no-scripts
 
 # Rebuild package discovery
 RUN php artisan package:discover --ansi
@@ -48,11 +49,10 @@ RUN php artisan package:discover --ansi
 # Generate Wayfinder
 RUN php artisan wayfinder:generate --with-form
 
-
 # ==========================================
-# STAGE 2: React + Vite Plus + pnpm
+# STAGE 3: React + Vite Plus + pnpm
 # ==========================================
-FROM node:22-alpine AS frontend
+FROM node:22-bookworm-slim AS frontend
 
 WORKDIR /app
 
@@ -86,44 +86,40 @@ ENV SKIP_WAYFINDER=true
 # Build frontend assets
 RUN pnpm run build
 
-
 # ==========================================
-# STAGE 3: Laravel PHP-FPM Production
+# STAGE 4: FrankenPHP Production
 # ==========================================
-FROM php:8.4-fpm-bookworm AS production
+FROM base AS production
 
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    libzip-dev \
-    libicu-dev \
-    libonig-dev \
-    && docker-php-ext-install \
-        pdo_pgsql \
-        zip \
-        intl \
-        mbstring \
-        bcmath \
-        opcache \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+ENV SERVER_NAME=:80
 
-WORKDIR /var/www/html
+# PHP production configuration
+RUN cp "$PHP_INI_DIR/php.ini-production" \
+    "$PHP_INI_DIR/php.ini"
 
-# Copy application
-COPY . .
+# Copy application and Composer dependencies
+COPY --from=php-build /app /app
+
+# Copy built frontend assets
+COPY --from=frontend /app/public/build \
+    /app/public/build
+
+# Copy Caddy configuration
+COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
+
+COPY docker/frankenphp/php.ini \
+    $PHP_INI_DIR/conf.d/99-custom.ini
 
 # Remove Vite development server indicator
 RUN rm -f public/hot
 
-# Copy Composer dependencies
-COPY --from=php-build /app/vendor ./vendor
-
-# Copy built React assets
-COPY --from=frontend /app/public/build ./public/build
-
 # Prepare Laravel writable directories
 RUN mkdir -p \
-    storage/framework/cache \
+    storage/framework/cache/data \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
@@ -132,7 +128,6 @@ RUN mkdir -p \
         storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
 
-# PHP-FPM port
-EXPOSE 9000
+EXPOSE 80
 
-CMD ["php-fpm"]
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
